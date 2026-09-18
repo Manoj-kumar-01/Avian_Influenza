@@ -57,7 +57,7 @@ The system operates a high-precision two-stage neural pipeline:
 - 🔬 **Two-Stage Inference Pipeline:** Filters out non-poultry environmental audio before disease diagnosis, eliminating false positives.
 - 📊 **128-Band Log-Mel Bioacoustic Heatmap:** Generates scientific Viridis acoustic spectrograms showing frequency over time with dB energy intensity.
 - 🤖 **Telegram Bot Interface:** Direct mobile diagnostics by sending voice notes or forwarding WhatsApp/Instagram audio to `@BirdFlu_bot`.
-- 💾 **Relational Database Storage:** SQLAlchemy database recording all diagnostic history, timestamps, infection probabilities, duration, and clinical notes. Compatible with SQLite and cloud PostgreSQL.
+- 💾 **MongoDB Atlas Cloud Storage:** Document-oriented persistence storing diagnostic reports, timestamps, infection probabilities, duration, and clinical assessments.
 - 🔔 **Multi-Channel Alert Integration:** Immediate push alerts via `ntfy.sh` (topic `birdflu7`) and automated SMTP email alerts when symptoms of Avian Influenza are flagged.
 - 🐳 **Containerized & Cloud-Ready:** Pre-configured Docker, Docker Compose, Procfile, and Render Blueprint for 1-click deployment.
 
@@ -93,8 +93,9 @@ Edit `.env`:
 # Telegram Bot Token (from @BotFather)
 TELEGRAM_BOT_TOKEN=your_token_here
 
-# Database URL (Default: local SQLite)
-DATABASE_URL=sqlite:///avian_guard.db
+# MongoDB Atlas Connection String
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
+MONGODB_DB_NAME=avian_guard
 
 # Email Alerts (Optional SMTP)
 SMTP_EMAIL=your_email@gmail.com

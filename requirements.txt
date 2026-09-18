@@ -17,8 +17,9 @@ numpy>=1.26.0
 matplotlib>=3.8.0
 Pillow>=10.2.0
 
-# Relational Database Storage
-sqlalchemy>=2.0.25
+# Cloud Database Storage (MongoDB Atlas)
+pymongo>=4.6.0
+dnspython>=2.6.0
 
 # Surveillance & Monitoring
 watchdog>=4.0.0
