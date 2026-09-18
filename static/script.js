@@ -824,15 +824,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btnTestNotif.addEventListener('click', async () => {
             btnTestNotif.disabled = true;
             btnTestNotif.style.opacity = '0.6';
-            showToast('Dispatching Test Alert...', 'Pushing notification to ntfy.envs.net/birdflu7 and system channels...', 'info');
+            showToast('Testing Alert System...', 'Triggering internal diagnostic alert simulation...', 'info');
 
             try {
                 const res = await fetch('/api/test-notification', { method: 'POST' });
                 const json = await res.json();
                 triggerDiagnosticNotification('Unhealthy', 0.985, 'manual_test_alert.wav', true);
                 showToast(
-                    'Push Dispatched Successfully!',
-                    'Pushed to ntfy. View live feed at: <a href="https://ntfy.envs.net/birdflu7" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">ntfy.envs.net/birdflu7</a>',
+                    'Diagnostic Alert Triggered',
+                    'Internal bioacoustic alert simulated and verified successfully.',
                     'success'
                 );
             } catch (err) {

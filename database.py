@@ -5,11 +5,21 @@ spectrogram results, and disease surveillance logs using MongoDB Atlas.
 """
 
 import os
+import hashlib
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
+
+def anonymize_identifier(ident: Optional[str]) -> Optional[str]:
+    """Anonymizes client identifiers or IP addresses to comply with privacy laws (GDPR/CCPA)."""
+    if not ident:
+        return None
+    ident_str = str(ident).strip()
+    if "." in ident_str or ":" in ident_str:
+        return f"anon_ip_{hashlib.sha256(ident_str.encode('utf-8')).hexdigest()[:12]}"
+    return ident_str
 
 # MongoDB Configuration
 MONGODB_URI = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
@@ -104,7 +114,7 @@ def save_diagnostic_record(
     record = {
         "timestamp": datetime.utcnow(),
         "source": source,
-        "user_identifier": str(user_identifier) if user_identifier else None,
+        "user_identifier": anonymize_identifier(user_identifier),
         "filename": filename,
         "prediction": prediction,
         "confidence": round(float(confidence), 4),

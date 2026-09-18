@@ -121,12 +121,13 @@ async def app_startup():
     start_telegram_bot_worker()
 
 # ── Alert Notification System ──
-NTFY_SERVERS = [
-    "https://ntfy.envs.net",  # Reliable mirror, verified working
-    "https://ntfy.sh",        # Main ntfy.sh (fallback if reachable)
-]
+ENABLE_EXTERNAL_PUSH = os.getenv("ENABLE_EXTERNAL_PUSH", "false").lower() in ("true", "1", "yes")
+ENABLE_EMAIL_ALERTS = os.getenv("ENABLE_EMAIL_ALERTS", "false").lower() in ("true", "1", "yes")
 
 def send_email_alert(subject: str, body: str):
+    if not ENABLE_EMAIL_ALERTS:
+        return {"status": "disabled", "reason": "External email alerts disabled"}
+
     smtp_email = os.getenv("SMTP_EMAIL")
     smtp_password = os.getenv("SMTP_PASSWORD")
     receiver_emails_raw = os.getenv("RECEIVER_EMAILS", "")
@@ -187,40 +188,35 @@ def send_push_alert(prediction: str, confidence: float, filename: str, is_hen: b
     with open(ALERTS_LOG, "a", encoding="utf-8") as f:
         f.write(log_entry)
 
-    # Push to ntfy servers (try fast mirror first, then fallback)
+    # External push (disabled by default for security and privacy)
     ntfy_results = {}
     ntfy_delivered = False
-    for server_base in NTFY_SERVERS:
+    if ENABLE_EXTERNAL_PUSH:
+        ntfy_topic = os.getenv("NTFY_TOPIC", "birdflu_private")
         try:
             resp = requests.post(
-                f"{server_base}/{topic_name}",
+                f"https://ntfy.sh/{ntfy_topic}",
                 data=body.encode("utf-8"),
                 headers={"Title": title, "Priority": priority, "Tags": tags},
                 timeout=3
             )
-            if resp.status_code == 200:
-                print(f"[NTFY] Notification pushed successfully to {server_base}/{topic_name}")
-                ntfy_results[server_base] = "delivered"
-                ntfy_delivered = True
-            else:
-                ntfy_results[server_base] = f"HTTP {resp.status_code}"
+            ntfy_delivered = (resp.status_code == 200)
+            ntfy_results["status"] = "delivered" if ntfy_delivered else f"HTTP {resp.status_code}"
         except Exception as e:
-            ntfy_results[server_base] = f"failed: {type(e).__name__}"
-            print(f"[NTFY] Push to {server_base} failed: {e}")
+            ntfy_results["error"] = str(e)
 
-    # Email alert (if configured and triggered)
+    # Email alert (if explicitly enabled)
     email_res = None
-    if prediction == "Unhealthy" or not is_hen:
+    if ENABLE_EMAIL_ALERTS and (prediction == "Unhealthy" or not is_hen):
         email_res = send_email_alert(f"[AvianGuard AI] {title}", body)
 
     return {
         "title": title,
         "body": body,
         "timestamp": timestamp,
+        "is_alert": (prediction == "Unhealthy"),
         "ntfy_delivered": ntfy_delivered,
-        "ntfy_details": ntfy_results,
-        "email_details": email_res,
-        "live_feed_url": "https://ntfy.envs.net/birdflu7"
+        "email_details": email_res
     }
 
 # ── Core Inference Engine (Sliding Window Architecture) ──
@@ -596,7 +592,7 @@ async def fetch_demo_audio(filename: str):
 
 @app.api_route("/api/test-notification", methods=["GET", "POST"])
 async def test_notification():
-    """Trigger a manual test alert to verify push and email delivery."""
+    """Trigger a manual test alert to verify internal notification pipeline."""
     result = send_push_alert(
         prediction="Unhealthy",
         confidence=0.985,
@@ -605,12 +601,8 @@ async def test_notification():
     )
     return {
         "status": "success",
-        "message": "Test alert notification dispatched",
-        "details": result,
-        "ntfy_web_urls": [
-            "https://ntfy.envs.net/birdflu7",
-            "https://ntfy.sh/birdflu7"
-        ]
+        "message": "Internal test diagnostic logged successfully",
+        "details": result
     }
 
 @app.get("/api/health")
