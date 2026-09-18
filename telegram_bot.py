@@ -48,6 +48,11 @@ def make_progress_bar(percentage: float, length: int = 10) -> str:
     return "█" * filled + "░" * empty
 
 
+import threading
+
+_heatmap_lock = threading.Lock()
+
+
 def generate_bioacoustic_heatmap_png(file_path: str, prediction: str = "", confidence: float = 0.0) -> bytes:
     """
     Generates the scientific 128-Band Log-Mel Bioacoustic Heatmap image matching the website.
@@ -64,53 +69,54 @@ def generate_bioacoustic_heatmap_png(file_path: str, prediction: str = "", confi
 
         spec_np = spec.squeeze().cpu().numpy()
 
-        fig, ax = plt.subplots(figsize=(9, 3.6), dpi=160)
-        fig.patch.set_facecolor("#0b1329")
-        ax.set_facecolor("#0b1329")
+        with _heatmap_lock:
+            fig, ax = plt.subplots(figsize=(9, 3.6), dpi=160)
+            fig.patch.set_facecolor("#0b1329")
+            ax.set_facecolor("#0b1329")
 
-        im = ax.imshow(
-            spec_np,
-            aspect="auto",
-            origin="lower",
-            cmap="viridis",
-            extent=[0, analysis_duration, 50, TARGET_SR // 2]
-        )
+            im = ax.imshow(
+                spec_np,
+                aspect="auto",
+                origin="lower",
+                cmap="viridis",
+                extent=[0, analysis_duration, 50, TARGET_SR // 2]
+            )
 
-        cbar = fig.colorbar(im, ax=ax, pad=0.02)
-        cbar.set_label("Acoustic Energy (dB)", color="#94a3b8", fontsize=9)
-        cbar.ax.yaxis.set_tick_params(color="#94a3b8")
-        plt.setp(plt.get(cbar.ax.axes, "yticklabels"), color="#94a3b8", fontsize=8)
+            cbar = fig.colorbar(im, ax=ax, pad=0.02)
+            cbar.set_label("Acoustic Energy (dB)", color="#94a3b8", fontsize=9)
+            cbar.ax.yaxis.set_tick_params(color="#94a3b8")
+            plt.setp(plt.get(cbar.ax.axes, "yticklabels"), color="#94a3b8", fontsize=8)
 
-        # Standard ASCII title to ensure reliable font rendering across systems
-        title_tag = ""
-        if prediction == "Unhealthy":
-            title_tag = f" — [ALERT: Suspected Avian Influenza | {confidence*100:.1f}%]"
-        elif prediction == "Healthy":
-            title_tag = f" — [HEALTHY POULTRY | {confidence*100:.1f}%]"
-        elif prediction == "Noise":
-            title_tag = f" — [ENVIRONMENTAL NOISE | {confidence*100:.1f}%]"
-        elif prediction == "Rejected":
-            title_tag = " — [NON-HEN AUDIO REJECTED]"
+            # Standard ASCII title to ensure reliable font rendering across systems
+            title_tag = ""
+            if prediction == "Unhealthy":
+                title_tag = f" — [ALERT: Suspected Avian Influenza | {confidence*100:.1f}%]"
+            elif prediction == "Healthy":
+                title_tag = f" — [HEALTHY POULTRY | {confidence*100:.1f}%]"
+            elif prediction == "Noise":
+                title_tag = f" — [ENVIRONMENTAL NOISE | {confidence*100:.1f}%]"
+            elif prediction == "Rejected":
+                title_tag = " — [NON-HEN AUDIO REJECTED]"
 
-        ax.set_title(
-            f"128-Band Log-Mel Bioacoustic Spectrogram{title_tag}",
-            color="#f8fafc",
-            fontsize=10.5,
-            fontweight="bold",
-            pad=10
-        )
-        ax.set_xlabel("Time (seconds)", color="#94a3b8", fontsize=9)
-        ax.set_ylabel("Frequency (Hz)", color="#94a3b8", fontsize=9)
-        ax.tick_params(colors="#94a3b8", labelsize=8)
+            ax.set_title(
+                f"128-Band Log-Mel Bioacoustic Spectrogram{title_tag}",
+                color="#f8fafc",
+                fontsize=10.5,
+                fontweight="bold",
+                pad=10
+            )
+            ax.set_xlabel("Time (seconds)", color="#94a3b8", fontsize=9)
+            ax.set_ylabel("Frequency (Hz)", color="#94a3b8", fontsize=9)
+            ax.tick_params(colors="#94a3b8", labelsize=8)
 
-        for spine in ax.spines.values():
-            spine.set_color("#1e293b")
+            for spine in ax.spines.values():
+                spine.set_color("#1e293b")
 
-        plt.tight_layout()
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", facecolor=fig.get_facecolor(), edgecolor="none")
-        plt.close(fig)
-        return buf.getvalue()
+            plt.tight_layout()
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", facecolor=fig.get_facecolor(), edgecolor="none")
+            plt.close(fig)
+            return buf.getvalue()
     except Exception as e:
         print(f"[BOT] Heatmap generation failed: {e}")
         return None

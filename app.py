@@ -2,6 +2,7 @@ import os
 import io
 import shutil
 import pickle
+import threading
 import traceback
 import requests
 from datetime import datetime
@@ -101,6 +102,23 @@ init_models()
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/Inputs", StaticFiles(directory=INPUTS_DIR), name="inputs")
 app.mount("/audio", StaticFiles(directory=INPUTS_DIR), name="audio")
+
+def start_telegram_bot_worker():
+    """Runs the Telegram Bot concurrently in a background daemon thread."""
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if bot_token and os.getenv("ENABLE_TELEGRAM_BOT", "true").lower() in ("true", "1", "yes"):
+        try:
+            from telegram_bot import run_bot
+            print("[STARTUP] Launching Telegram Bot background worker...")
+            bot_thread = threading.Thread(target=run_bot, args=(bot_token,), daemon=True, name="TelegramBotDaemon")
+            bot_thread.start()
+            print("[STARTUP] Telegram Bot is running concurrently with the web server.")
+        except Exception as e:
+            print(f"[STARTUP] Could not start Telegram Bot daemon: {e}")
+
+@app.on_event("startup")
+async def app_startup():
+    start_telegram_bot_worker()
 
 # ── Alert Notification System ──
 NTFY_SERVERS = [
@@ -597,11 +615,15 @@ async def test_notification():
 
 @app.get("/api/health")
 async def health_check():
+    from database import get_collection
     return {
         "status": "online",
+        "service": "AvianGuard AI Unified Surveillance Server",
         "device": str(device),
         "cnn_loaded": cnn_model is not None,
         "gatekeeper_loaded": gatekeeper_model is not None,
+        "telegram_bot_active": bool(os.getenv("TELEGRAM_BOT_TOKEN")),
+        "mongodb_connected": get_collection() is not None,
         "target_accuracy": ">95%"
     }
 
