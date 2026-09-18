@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AvianGuard AI — Avian Influenza Detection System</title>
+    <meta name="description" content="Precision Bioacoustic AI System for Avian Influenza (Bird Flu) Detection with automatic non-hen voice filtering and >99% verified accuracy.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Wavesurfer.js for interactive waveform -->
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Ambient Background Lighting -->
+    <div class="bg-mesh"></div>
+    <div class="bg-glow glow-primary"></div>
+    <div class="bg-glow glow-danger" id="bg-danger-glow"></div>
+
+    <div class="app-layout">
+        <!-- Top Navigation Header -->
+        <header class="top-nav">
+            <div class="brand-group">
+                <div class="brand-badge">
+                    <i data-lucide="shield-alert" class="brand-icon"></i>
+                </div>
+                <div>
+                    <h1 class="brand-title">AvianGuard AI</h1>
+                    <p class="brand-sub">Avian Influenza Detection &bull; Two-Stage Neural Architecture</p>
+                </div>
+            </div>
+
+            <div class="nav-badges">
+                <div class="chip chip-success">
+                    <span class="pulse-dot green"></span>
+                    <span>Stage 1 Gatekeeper: Active</span>
+                </div>
+                <div class="chip chip-info">
+                    <i data-lucide="cpu" style="width:14px;height:14px"></i>
+                    <span>PyTorch CUDA &bull; ResNet-34</span>
+                </div>
+                <button id="btn-enable-notif" class="chip chip-purple" style="cursor: pointer; border: 1px solid rgba(192, 132, 252, 0.4); background: rgba(192, 132, 252, 0.12);" title="Click to enable browser desktop notifications">
+                    <i data-lucide="bell" style="width:14px;height:14px"></i>
+                    <span id="notif-perm-status">Desktop Alerts</span>
+                </button>
+                <button id="btn-test-notif" class="chip chip-info" style="cursor: pointer; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.12);" title="Send instant test alert">
+                    <i data-lucide="send" style="width:14px;height:14px"></i>
+                    <span>Test Alert</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Floating Toast Notifications -->
+        <div id="toast-container" style="position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; pointer-events: none;"></div>
+
+        <!-- Main Dashboard 2-Column Grid -->
+        <main class="dashboard-grid">
+            <!-- Left Column: Audio Input & Recording Hub -->
+            <section class="left-col">
+                <div class="card ingestion-card">
+                    <div class="card-title-row">
+                        <i data-lucide="music-2" class="card-icon-blue"></i>
+                        <h3>Audio Input &amp; Recording</h3>
+                    </div>
+
+                    <!-- Clean 2-Tab Navigation -->
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="tab-upload">
+                            <i data-lucide="upload-cloud"></i>
+                            <span>Upload Audio File</span>
+                        </button>
+                        <button class="tab-btn" data-tab="tab-mic">
+                            <i data-lucide="mic"></i>
+                            <span>Record Audio (Mic)</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab 1: File Drop Zone -->
+                    <div class="tab-content active" id="tab-upload">
+                        <div class="drop-zone" id="drop-zone">
+                            <input type="file" id="audio-input" accept=".wav,.mp3,.aac,.m4a,.ogg,.webm,.flac,.mp4,.wma,.opus,audio/*,video/mp4" hidden>
+                            <label for="audio-input" class="drop-label">
+                                <div class="drop-icon-box">
+                                    <i data-lucide="file-audio" class="drop-icon"></i>
+                                </div>
+                                <span class="drop-title">Drop audio file here or <strong>browse</strong></span>
+                                <span class="drop-hint">Supports WAV, MP3, M4A, AAC, OGG, WebM, FLAC</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Live Microphone Recording -->
+                    <div class="tab-content" id="tab-mic">
+                        <div class="mic-recorder-box">
+                            <div class="mic-visualizer" id="mic-meter">
+                                <div class="mic-ripple" id="mic-ripple"></div>
+                                <button class="mic-btn" id="btn-record">
+                                    <i data-lucide="mic" id="mic-icon"></i>
+                                </button>
+                            </div>
+                            <div class="mic-status-label" id="mic-status">Click microphone to start recording</div>
+                            <div class="mic-timer" id="mic-timer">00:00</div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Audio Waveform & Player -->
+                    <div class="audio-player-card hidden" id="player-container">
+                        <div class="player-header">
+                            <div class="player-info">
+                                <i data-lucide="disc" class="spin-icon"></i>
+                                <span class="player-filename" id="current-filename">sample.wav</span>
+                            </div>
+                            <div class="player-header-right">
+                                <span class="player-time" id="player-time">0:00 / 0:00</span>
+                                <button type="button" class="btn-sound-test" id="btn-sound-test" title="Test if your computer speakers/headphones are working">
+                                    <i data-lucide="volume-2"></i>
+                                    <span>Test Speaker</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Interactive Waveform -->
+                        <div id="waveform" class="waveform-box"></div>
+
+                        <!-- Direct Hardware Audio Player Controls -->
+                        <div class="player-controls">
+                            <button type="button" class="player-btn btn-play" id="btn-play-pause">
+                                <i data-lucide="play" id="play-icon"></i>
+                                <span>Play Audio</span>
+                            </button>
+                            <button type="button" class="player-btn btn-restart" id="btn-restart" title="Restart playback from beginning">
+                                <i data-lucide="rotate-ccw"></i>
+                                <span>Restart</span>
+                            </button>
+                            <div class="volume-control-box">
+                                <i data-lucide="volume-2" class="vol-icon" id="vol-icon-btn" title="Volume"></i>
+                                <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" title="Hardware Volume Level">
+                                <span id="volume-label">100%</span>
+                            </div>
+                        </div>
+
+                        <!-- Native Direct Hardware Player (Uncompressed Audio Output) -->
+                        <div class="native-audio-wrapper">
+                            <div class="native-bar-header">
+                                <span class="native-bar-title"><i data-lucide="headphones"></i> Direct Sound Card Output:</span>
+                                <span class="native-bar-status" id="audio-status-pill">Ready to play</span>
+                            </div>
+                            <audio id="native-audio-player" controls preload="auto" class="native-player"></audio>
+                        </div>
+                    </div>
+
+                    <!-- Analyze Trigger Button -->
+                    <button class="btn-primary btn-cta" id="btn-analyze" disabled>
+                        <i data-lucide="zap"></i>
+                        <span>Run Diagnostic Analysis</span>
+                    </button>
+
+                    <!-- Loading Progress Indicator -->
+                    <div class="loading-box hidden" id="loading-spinner">
+                        <div class="spinner-ring"></div>
+                        <div class="loading-text">
+                            <strong>Analyzing Audio Sample...</strong>
+                            <span>Stage 1 Hen Voice Filter &bull; Stage 2 ResNet-34 Feature Ingestion</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Diagnostic Assessment Panel -->
+            <section class="right-col">
+                <!-- Result Card -->
+                <div class="card result-card hidden" id="result-panel">
+                    <div class="result-header">
+                        <div class="card-title-row">
+                            <i data-lucide="activity" class="card-icon-green"></i>
+                            <h3>Diagnostic Assessment</h3>
+                        </div>
+                        <div class="result-header-actions">
+                            <button type="button" class="btn-small btn-voice" id="btn-speak-diagnosis" title="Listen to AI voice read this clinical assessment">
+                                <i data-lucide="volume-2" style="width:14px;height:14px"></i> <span>Listen (AI Voice)</span>
+                            </button>
+                            <button type="button" class="btn-small" id="btn-print-report">
+                                <i data-lucide="printer" style="width:13px;height:13px"></i> Print Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stage 1 Gatekeeper Badge -->
+                    <div class="stage-badge-box" id="stage1-badge-box">
+                        <div class="stage-tag">STAGE 1: HEN VOICE FILTER</div>
+                        <div class="stage-content">
+                            <div class="stage-icon" id="stage1-icon">
+                                <i data-lucide="check-circle-2"></i>
+                            </div>
+                            <div class="stage-details">
+                                <h4 id="stage1-title">Verified Hen Vocalization</h4>
+                                <p id="stage1-desc">Acoustic signature matches domestic poultry frequency characteristics.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2 Main Diagnosis Card -->
+                    <div class="diagnosis-badge" id="diagnosis-card">
+                        <div class="diag-icon-wrapper" id="diag-icon-box">
+                            <i data-lucide="shield-check" id="diag-icon"></i>
+                        </div>
+                        <div class="diag-info">
+                            <span class="diag-subtitle">STAGE 2 NEURAL CLASSIFICATION</span>
+                            <h2 class="diag-title" id="diag-prediction">Healthy</h2>
+                            <div class="diag-confidence">Confidence: <strong id="diag-confidence-pct">98.5%</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Clinical Recommendation Note -->
+                    <div class="clinical-box" id="clinical-box">
+                        <div class="clinical-header">
+                            <i data-lucide="stethoscope" class="clinical-icon"></i>
+                            <strong>Veterinary Clinical Assessment</strong>
+                        </div>
+                        <p class="clinical-text" id="clinical-text">
+                            Acoustic parameters indicate normal domestic chicken vocal dynamics. No signs of respiratory distress, tracheal rales, or coughing detected.
+                        </p>
+                    </div>
+
+                    <!-- Mel-Spectrogram Acoustic Heatmap Visualizer -->
+                    <div class="spectrogram-section" id="spec-section">
+                        <div class="spec-header">
+                            <i data-lucide="waveform" style="width:15px;height:15px"></i>
+                            <span>128-Band Log-Mel Bioacoustic Spectrogram</span>
+                        </div>
+                        <div class="spec-image-box">
+                            <img id="spectrogram-img" src="" alt="Mel-Spectrogram Heatmap">
+                        </div>
+                    </div>
+
+                    <!-- Multi-Class Probability Breakdown -->
+                    <div class="probabilities-section">
+                        <h4>Acoustic Probability Distribution</h4>
+                        <div class="prob-row">
+                            <div class="prob-meta">
+                                <span><i data-lucide="heart" class="icon-healthy"></i> Healthy Hen Vocalization</span>
+                                <strong id="val-healthy">0.0%</strong>
+                            </div>
+                            <div class="prob-track">
+                                <div class="prob-fill fill-green" id="bar-healthy" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="prob-row">
+                            <div class="prob-meta">
+                                <span><i data-lucide="alert-octagon" class="icon-unhealthy"></i> Suspected Avian Influenza (Rales/Cough)</span>
+                                <strong id="val-unhealthy">0.0%</strong>
+                            </div>
+                            <div class="prob-track">
+                                <div class="prob-fill fill-red" id="bar-unhealthy" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="prob-row">
+                            <div class="prob-meta">
+                                <span><i data-lucide="volume-x" class="icon-noise"></i> Background Farm Noise</span>
+                                <strong id="val-noise">0.0%</strong>
+                            </div>
+                            <div class="prob-track">
+                                <div class="prob-fill fill-gray" id="bar-noise" style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Feed -->
+                <div class="card feed-card">
+                    <div class="feed-header">
+                        <div class="card-title-row">
+                            <i data-lucide="history" class="card-icon-purple"></i>
+                            <h3>Diagnostic History Log</h3>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a href="https://ntfy.envs.net/birdflu7" target="_blank" class="chip chip-ntfy" title="Open live push alert feed (Fast Universal Mirror)">
+                                <i data-lucide="external-link" style="width:13px;height:13px"></i>
+                                <span>ntfy.envs.net/birdflu7</span>
+                            </a>
+                            <a href="https://ntfy.sh/birdflu7" target="_blank" class="chip chip-ntfy" title="Open official ntfy.sh feed">
+                                <i data-lucide="smartphone" style="width:13px;height:13px"></i>
+                                <span>ntfy.sh/birdflu7</span>
+                            </a>
+                        </div>
+                    </div>
+                    <ul class="feed-list" id="feed-list">
+                        <li class="feed-empty">
+                            <i data-lucide="inbox"></i>
+                            <span>Upload or record an audio file to view real-time diagnostic results.</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-left">
+                <span>AvianGuard AI &bull; Deep Learning Bioacoustic Avian Disease Detection</span>
+            </div>
+            <div class="footer-right">
+                <span>PyTorch ResNet-34 &bull; Bioacoustic Health Monitoring</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hidden audio element -->
+    <audio id="hidden-audio" hidden></audio>
+
+    <script src="/static/script.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

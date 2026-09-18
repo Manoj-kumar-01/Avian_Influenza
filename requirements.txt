@@ -1,0 +1,24 @@
+# AvianGuard AI — Production Dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+python-multipart>=0.0.9
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Deep Learning & Bioacoustics
+torch>=2.2.0
+torchaudio>=2.2.0
+torchvision>=0.17.0
+soundfile>=0.12.1
+imageio-ffmpeg>=0.4.9
+scikit-learn>=1.4.0
+numpy>=1.26.0
+matplotlib>=3.8.0
+Pillow>=10.2.0
+
+# Relational Database Storage
+sqlalchemy>=2.0.25
+
+# Surveillance & Monitoring
+watchdog>=4.0.0

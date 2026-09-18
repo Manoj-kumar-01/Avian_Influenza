@@ -1,0 +1,69 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual Environments
+venv/
+venv2/
+env/
+ENV/
+.venv/
+
+# Environment variables & secrets (CRITICAL)
+.env
+.env.local
+.env.*.local
+
+# Databases & local state
+*.db
+*.sqlite
+*.sqlite3
+avian_guard.db
+
+# Runtime logs
+*.log
+alerts.log
+
+# System & IDE artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Scratch & Temporary test files
+scratch/
+scratch_*
+*.tmp
+
+# Dataset exclusions (keep repository fast & under GitHub limits)
+# Bulk datasets can be downloaded using download_datasets.py
+Inputs/Chicken_Audio_Dataset/
+Inputs/Huge_Normal_Hen_Dataset/
+Inputs/Non_Hen_Dataset/
+Inputs/Chicken_Temp_Long/
+Inputs/*_clean.wav
+Inputs/*.mp3
+Inputs/*.mp4
+Inputs/*.aac
+Inputs/*.webm
+Inputs/*.ogg
+Inputs/*.wav
+
+# Whitelist canonical demo files for testing out-of-the-box
+!Inputs/demo_healthy_hen.wav
+!Inputs/demo_healthy_hen_clean.wav
+!Inputs/demo_unhealthy_avian_flu.wav
+!Inputs/demo_unhealthy_avian_flu_clean.wav
+!Inputs/Flu-Noise.wav
+!Inputs/mixkit-horde-of-barking-dogs-60.wav
+
+# Explicitly track trained neural models
+!cnn_model.pth
+!ood_detector.pkl
+!model.pkl

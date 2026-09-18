@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: avianguard-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - app-data:/app/Inputs
+      - db-data:/app
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  telegram-bot:
+    build: .
+    container_name: avianguard-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - app-data:/app/Inputs
+      - db-data:/app
+    command: ["python", "-u", "telegram_bot.py"]
+    depends_on:
+      - web
+
+volumes:
+  app-data:
+  db-data:
